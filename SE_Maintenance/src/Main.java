@@ -33,12 +33,21 @@ import org.xml.sax.SAXException;
 
 public class Main {
 
+	private static boolean info;
+	private static boolean remove_floatingObjects;
+	private static boolean remove_unPowered;
+	private static boolean remove_noBeacon;
+	private static boolean remove_noOwnerShip;
+	private static boolean disableBlocks;
+	private static boolean cleanup;
 	/**
 	 * Space Engineers - Maintenance
 	 * 
 	 * Parameter: <SavePath> <BackupPath> <Params[]> Params[]: -
 	 * 
 	 */
+
+	public static List<String> entityRemove = null;
 
 	int asteroids = 0;
 	int floatingObjects = 0;
@@ -142,17 +151,20 @@ public class Main {
 		 * ================== General Settings =================
 		 * ===================================================
 		 */
+
+		entityRemove = new ArrayList<String>();
+
 		String path = "";
 		if (argSavePath.equals("")) {
 			path = "C:\\ProgramData\\SpaceEngineersDedicated\\Armageddon\\Saves\\Survival\\SANDBOX_0_0_0_.sbs";
 		} else {
 			path = argSavePath + "\\SANDBOX_0_0_0_.sbs";
 		}
-		boolean info = argInfo; // Informations doing the Work
+		info = argInfo; // Informations doing the Work
 
-		boolean cleanup = argCleanup; // Activating Cleanup-Mode
+		cleanup = argCleanup; // Activating Cleanup-Mode
 
-		boolean disableBlocks = argDeAll;
+		disableBlocks = argDeAll;
 
 		/*
 		 * ===================================================
@@ -160,10 +172,10 @@ public class Main {
 		 * ===================================================
 		 */
 
-		boolean remove_floatingObjects = argRemFloating; // Removing Floating
-		boolean remove_unPowered = argNoPower; // removing grids without power
-		boolean remove_noBeacon = argBeacon; // removing grids without beacon
-		boolean remove_noOwnerShip = true;
+		remove_floatingObjects = argRemFloating; // Removing Floating
+		remove_unPowered = argNoPower; // removing grids without power
+		remove_noBeacon = argBeacon; // removing grids without beacon
+		remove_noOwnerShip = true;
 
 		/*
 		 * ===================================================
@@ -185,39 +197,65 @@ public class Main {
 
 		Main main = new Main();
 		if (info | disableBlocks | cleanup)
-			main.startMaintanence(path, info, cleanup, disableBlocks,
-					remove_unPowered, remove_noBeacon, remove_floatingObjects,
-					remove_noOwnerShip);
+			main.startMaintanence(path);
 	}
 
-	public void startMaintanence(String path, boolean info, boolean cleanup,
-			boolean disableBlocks, boolean remove_unPowered,
-			boolean remove_noBeacon, boolean floatingObjects,
-			boolean noOwnerShip) {
-
-		Document doc = readXML(path);
-		List<CubeGrid> cg = analyseXML(doc);
-
-		// Infos
-		if (info)
-			info(cg);
-
-		if (cleanup)
-			doc = prepareCleanupWorld(doc, cg, remove_unPowered,
-					remove_noBeacon, noOwnerShip, floatingObjects);
-
-		if (disableBlocks)
-			doc = prepareDisableBlocks(doc, cg);
+	public void startMaintanence(String path) {
+		Document doc = null;
+		if (cleanup) {
+			doc = analyseXML(readXML(path));
+		}
 
 		// Writing (save) changes to XML
-		if (cleanup | disableBlocks)
+		if (cleanup | disableBlocks) {
 			saveXML(doc, path);
 
-		System.out.println("### Results ###");
-		System.out.println("	Changes:");
-		System.out.println("		Deleted: " + this.deleted);
-		System.out.println("		Modified: " + this.modified);
+			System.out.println("### Results ###");
+			System.out.println("Grids: " + this.grids);
+			System.out.println("###	Changes ###");
+			System.out.println("Deleted: " + this.deleted);
+			System.out.println("Modified: " + this.modified);
+		}
+	}
 
+	public void log(String text, int level, boolean append) {
+		boolean debug = true;
+		if (info) {
+			switch (level) {
+			case 0:
+				if (append)
+					System.out.print("INFO: " + text);
+				else
+					System.out.println("INFO: " + text);
+				break;
+			case 1:
+				if (debug) {
+					if (append)
+						System.out.print("  INFO: " + text);
+					else
+						System.out.println("  INFO: " + text);
+				}
+				break;
+			case 2:
+				if (debug) {
+					if (append)
+						System.out.print("   INFO: " + text);
+					else
+						System.out.println("   INFO: " + text);
+				}
+				break;
+
+			default:
+				if (debug) {
+					if (append)
+						System.out.print("    INFO: " + text);
+					else
+						System.out.println("    INFO: " + text);
+				}
+				break;
+			}
+
+		}
 	}
 
 	public void info(List<CubeGrid> list) {
@@ -291,93 +329,220 @@ public class Main {
 
 	}
 
-	private Document prepareDisableBlocks(Document doc, List<CubeGrid> grid) {
+	private Document analyseXML(Document doc) {
+		try {
+			NodeList nList = doc
+					.getElementsByTagName("MyObjectBuilder_EntityBase");
 
-		NodeList nodes = doc.getElementsByTagName("MyObjectBuilder_CubeBlock");
+			for (int i = 0; i < nList.getLength(); i++) {
+				Node nNode = nList.item(i);
 
-		for (int j = 0; j < nodes.getLength(); j++) {
-			Node n = nodes.item(j);
-			Element ee = (Element) n;
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+					Element e = (Element) nNode;
 
-			if (ee.getNodeName() != null) {
+					switch (e.getAttribute("xsi:type")) {
+					case "MyObjectBuilder_FloatingObject":
+						// do s.th. with FO
+						break;
 
-				switch (ee.getAttribute("xsi:type")) {
-				case "MyObjectBuilder_GravityGenerator":
-				case "MyObjectBuilder_TimerBlock":
-				case "MyObjectBuilder_SensorBlock":
-				case "MyObjectBuilder_ReflectorLight":
-				case "MyObjectBuilder_InteriorLight":
-				case "MyObjectBuilder_Refinery":
-				case "MyObjectBuilder_Assembler":
-				case "MyObjectBuilder_Projector":
-				case "MyObjectBuilder_Beacon":
-				case "MyObjectBuilder_RadioAntenna":
-					ee.getElementsByTagName("Enabled").item(0)
-							.setTextContent("false");
-					modified++;
-					break;
-				case "MyObjectBuilder_Gyro":
-					if (ee.getElementsByTagName("SubtypeName").item(0)
-							.getTextContent().equals("LargeFTL")
-							|| ee.getElementsByTagName("SubtypeName").item(0)
-									.getTextContent().equals("SmallFTL")) {
-						System.out.println("######## Found FTL ########");
-						ee.getElementsByTagName("Enabled").item(0)
-								.setTextContent("false");
-						ee.getElementsByTagName("GyroOverride").item(0)
-								.setTextContent("false");
-						ee.getElementsByTagName("ColorMaskHSV").item(0)
-								.getAttributes();
+					case "MyObjectBuilder_CubeGrid":
+						// do s.th. with CG
+						grids++;
+						log("Grid-Id: "
+								+ e.getElementsByTagName("EntityId").item(0)
+										.getTextContent(), 0, false);
+						if (checkCubeGridForCleanup(e)) {
+							log("deleted", 1, false);
+							deleteElement(doc);
+							deleted++;
+						}
+						break;
+
+					case "MyObjectBuilder_Character":
+						// do s.th. with Characters
+						break;
+
+					case "MyObjectBuilder_VoxelMap":
+						// do s.th. with Asteroids
+						break;
+
 					}
-					break;
+
 				}
-
 			}
-		}
 
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return doc;
 	}
 
-	private Document prepareCleanupWorld(Document doc, List<CubeGrid> grid,
-			boolean noPowered, boolean noBeacon, boolean noOwnerShip,
-			boolean floatingObjects) {
+	public boolean checkCubeGridForCleanup(Element element) {
+		log("===== Entering CubeBlocks =====", 1, false);
+		boolean delete = true;
+		boolean powered = false;
+		boolean beaconed = false;
 
-		NodeList nodes = doc.getElementsByTagName("MyObjectBuilder_EntityBase");
-		List<String> entityRemove = new ArrayList<String>();
+		NodeList nestedNode = element
+				.getElementsByTagName("MyObjectBuilder_CubeBlock");
+		for (int j = 0; j < nestedNode.getLength(); j++) {
+			Node n = nestedNode.item(j);
+			Element ee = (Element) n;
+			if (ee.getNodeName() != null) {
+				log("Type: " + ee.getAttributeNode("xsi:type").getNodeValue(),
+						2, true);
+				log("SubtypeName: "
+						+ ee.getElementsByTagName("SubtypeName").item(0)
+								.getTextContent(), 2, false);
 
-		for (CubeGrid s : grid) {
-			if (s.getType().equals("MyObjectBuilder_CubeGrid")) {
+				if (cleanup && remove_unPowered && !remove_noBeacon) {
+					if (!powered) {
+						powered = checkForPower(ee);
+						if (powered)
+							delete = false;
+					}
 
-				if (!entityRemove.contains(s.getEntityId())) {
-					boolean delete = false;
+				} else if (cleanup && remove_noBeacon && !remove_unPowered) {
+					if (!beaconed) {
+						beaconed = checkForBeacon(ee);
+						if (beaconed)
+							delete = false;
+					}
 
-					if ((noPowered && noBeacon)) {
-						if (!(s.isPowered() && s.isBeacon()))
-							delete = true;
-					} else {
+				} else if (cleanup && remove_noBeacon && remove_unPowered) {
+					if (!beaconed | !powered) {
+						if (!beaconed) {
+							beaconed = checkForBeacon(ee);
+							if (beaconed)
+								if (powered)
+									delete = false;
 
-						if (noPowered && !noBeacon) {
-							if (!s.isPowered())
-								delete = true;
 						}
+						if (!powered) {
+							powered = checkForPower(ee);
+							if (powered)
+								if (beaconed)
+									delete = false;
 
-						if (noBeacon && !noPowered) {
-							if (!s.isBeacon())
-								delete = true;
 						}
 					}
-					if (delete)
-						entityRemove.add(s.getEntityId());
 				}
-			}
 
-			if (floatingObjects) {
-				if (s.getType().equals("MyObjectBuilder_CubeGrid")) {
-					entityRemove.add(s.getEntityId());
+				if (disableBlocks) {
+					disableBlocks(ee);
 				}
 			}
 
 		}
+		return delete;
+	}
+
+	public boolean checkInventoryFor(Element element, String block, String item) {
+		if (element.getAttributeNode("xsi:type").getNodeValue().equals(block)) {
+			NodeList inventoryNode = element.getElementsByTagName("Inventory");
+			for (int u = 0; u < inventoryNode.getLength(); u++) {
+				Node inventoryN = inventoryNode.item(u);
+				Element inventoryee = (Element) inventoryN;
+
+				NodeList itemsNode = inventoryee.getElementsByTagName("Items");
+				for (int v = 0; v < itemsNode.getLength(); v++) {
+
+					Node itemsn = itemsNode.item(v);
+					Element itemsee = (Element) itemsn;
+					// System.out.println("items = true");
+					if (itemsee.hasChildNodes()) {
+						if (itemsee.getElementsByTagName("SubtypeName").item(0)
+								.getTextContent().equals(item)) {
+							return true;
+						}
+					}
+				}
+
+			}
+		}
+		return false;
+	}
+
+	private boolean checkForPower(Element element) {
+
+		switch (element.getAttributeNode("xsi:type").getNodeValue()) {
+		case "MyObjectBuilder_SolarPanel":
+		case "MyObjectBuilder_BatteryBlock":
+			return true;
+
+		case "MyObjectBuilder_Reactor":
+			if (checkInventoryFor(element, element.getAttributeNode("xsi:type")
+					.getNodeValue(), "Uranium")) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public boolean disableBlocks(Element element) {
+
+		switch (element.getAttribute("xsi:type")) {
+		case "MyObjectBuilder_GravityGenerator":
+		case "MyObjectBuilder_TimerBlock":
+		case "MyObjectBuilder_SensorBlock":
+		case "MyObjectBuilder_ReflectorLight":
+		case "MyObjectBuilder_InteriorLight":
+		case "MyObjectBuilder_Refinery":
+		case "MyObjectBuilder_Assembler":
+		case "MyObjectBuilder_Projector":
+		case "MyObjectBuilder_Beacon":
+		case "MyObjectBuilder_RadioAntenna":
+		case "MyObjectBuilder_ShipWelder":
+		case "MyObjectBuilder_ShipGrinder":
+		case "MyObjectBuilder_MotorAdvancedStator":
+		case "MyObjectBuilder_MotorStator":
+			element.getElementsByTagName("Enabled").item(0)
+					.setTextContent("false");
+			modified++;
+			return true;
+			// Test Disable FTL
+			// case "MyObjectBuilder_Gyro":
+			// if (element.getElementsByTagName("SubtypeName").item(0)
+			// .getTextContent().equals("LargeFTL")
+			// || element.getElementsByTagName("SubtypeName").item(0)
+			// .getTextContent().equals("SmallFTL")) {
+			// System.out.println("######## Found FTL ########");
+			// element.getElementsByTagName("Enabled").item(0)
+			// .setTextContent("false");
+			// element.getElementsByTagName("GyroOverride").item(0)
+			// .setTextContent("false");
+			// element.getElementsByTagName("ColorMaskHSV").item(0)
+			// .getAttributes();
+			// }
+			// break;
+		}
+
+		return false;
+	}
+
+	public boolean checkForBeacon(Element element) {
+
+		boolean beaconed = false;
+
+		switch (element.getAttributeNode("xsi:type").getNodeValue()) {
+		case "MyObjectBuilder_Beacon":
+			if (!beaconed)
+				beaconed = true;
+			return true;
+
+		}
+
+		return false;
+	}
+
+	public void deleteElement(Element e) {
+		e.getParentNode().removeChild(e);
+		deleted++;
+	}
+
+	public void deleteElement(Document doc) {
+		NodeList nodes = doc.getElementsByTagName("MyObjectBuilder_EntityBase");
 
 		for (int i = 0; i < nodes.getLength(); i++) {
 			Element parent = (Element) nodes.item(i);
@@ -388,8 +553,6 @@ public class Main {
 				this.deleted++;
 			}
 		}
-
-		return doc;
 	}
 
 	private Document readXML(String path) {
@@ -403,7 +566,7 @@ public class Main {
 
 			dBuilder = dbFactory.newDocumentBuilder();
 			FileInputStream in = new FileInputStream(fXmlFile);
-			Document doc = dBuilder.parse(in, "UTF-16");
+			Document doc = dBuilder.parse(in, "UTF-8");
 
 			doc.getDocumentElement().normalize();
 
@@ -419,99 +582,6 @@ public class Main {
 			e.printStackTrace();
 		}
 		return null;
-	}
-
-	private List<CubeGrid> analyseXML(Document doc) {
-
-		List<CubeGrid> cubeGrid = new ArrayList<CubeGrid>();
-
-		try {
-			NodeList nList = doc
-					.getElementsByTagName("MyObjectBuilder_EntityBase");
-
-			for (int i = 0; i < nList.getLength(); i++) {
-				CubeGrid cg = new CubeGrid();
-				List<CubeBlock> cl = new ArrayList<CubeBlock>();
-				Node nNode = nList.item(i);
-
-				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-					Element e = (Element) nNode;
-					cg.setNode(e);
-					cg.setPowered(false);
-					cg.setType(e.getAttribute("xsi:type"));
-					cg.setEntityId(e.getElementsByTagName("EntityId").item(0)
-							.getTextContent());
-
-					NodeList nestedNode = e
-							.getElementsByTagName("MyObjectBuilder_CubeBlock");
-					for (int j = 0; j < nestedNode.getLength(); j++) {
-						Node n = nestedNode.item(j);
-						Element ee = (Element) n;
-						CubeBlock cb = new CubeBlock();
-						if (ee.getNodeName() != null) {
-							cb.setType(ee.getAttributeNode("xsi:type")
-									.getNodeValue());
-						}
-						cb.setSubType(ee.getElementsByTagName("SubtypeName")
-								.item(0).getTextContent());
-						// Inventory if subtype is reactor
-						if (cb.getType().equals("MyObjectBuilder_Reactor")
-								|| cb.getType().equals(
-										"MyObjectBuilder_SolarPanel")
-								|| cb.getType().equals(
-										"MyObjectBuilder_BatteryBlock")) {
-							if (cb.getType().equals(
-									"MyObjectBuilder_SolarPanel")
-									|| cb.getType().equals(
-											"MyObjectBuilder_BatteryBlock")) {
-								cg.setPowered(true);
-							}
-
-							if (cb.getType().equals("MyObjectBuilder_Reactor")) {
-								NodeList inventoryNode = ee
-										.getElementsByTagName("Inventory");
-								// System.out.println("inventory now");
-								for (int u = 0; u < inventoryNode.getLength(); u++) {
-									Node inventoryN = inventoryNode.item(u);
-									Element inventoryee = (Element) inventoryN;
-
-									NodeList itemsNode = inventoryee
-											.getElementsByTagName("Items");
-									for (int v = 0; v < itemsNode.getLength(); v++) {
-
-										Node itemsn = itemsNode.item(v);
-										Element itemsee = (Element) itemsn;
-										// System.out.println("items = true");
-										if (itemsee.hasChildNodes()) {
-											if (itemsee
-													.getElementsByTagName(
-															"SubtypeName")
-													.item(0).getTextContent()
-													.equals("Uranium")) {
-												cg.setPowered(true);
-											}
-										}
-									}
-
-								}
-							}
-						}
-
-						if (cb.getType().equals("MyObjectBuilder_Beacon")) {
-							cg.setBeacon(true);
-						}
-
-						cl.add(cb);
-					}
-					cg.setCubeBlocks(cl);
-				}
-				cubeGrid.add(cg);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return cubeGrid;
 	}
 
 }
