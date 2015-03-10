@@ -17,3 +17,5 @@ Using a Savegame Path and Delete all Grids without Power+Beacon AND deactivate a
 
 java -jar Path\Maintenance.jar -h -S "Path\To\Folder\" -c -cp -cb -da
 
+Update:
+Entire rework - Should work now as expected. Use the Example above. More adjustments should follow.
