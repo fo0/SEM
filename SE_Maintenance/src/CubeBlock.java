@@ -2,8 +2,6 @@ public class CubeBlock {
 
 	private String type;
 	private String subType;
-	private Position min;
-	private Position colorMaskHSV;
 	private String shareMode;
 	private String deformationRatio;
 
@@ -21,22 +19,6 @@ public class CubeBlock {
 
 	public void setSubType(String subType) {
 		this.subType = subType;
-	}
-
-	public Position getMin() {
-		return min;
-	}
-
-	public void setMin(Position min) {
-		this.min = min;
-	}
-
-	public Position getColorMaskHSV() {
-		return colorMaskHSV;
-	}
-
-	public void setColorMaskHSV(Position colorMaskHSV) {
-		this.colorMaskHSV = colorMaskHSV;
 	}
 
 	public String getShareMode() {
@@ -59,13 +41,11 @@ public class CubeBlock {
 
 	}
 
-	public CubeBlock(String type, String subType, Position min,
-			Position colorMaskHSV, String shareMode, String deformationRatio) {
+	public CubeBlock(String type, String subType, String shareMode,
+			String deformationRatio) {
 		super();
 		this.type = type;
 		this.subType = subType;
-		this.min = min;
-		this.colorMaskHSV = colorMaskHSV;
 		this.shareMode = shareMode;
 		this.deformationRatio = deformationRatio;
 	}

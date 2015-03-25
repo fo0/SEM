@@ -7,7 +7,6 @@ public class CubeGrid {
 	private String type;
 	private String entityId;
 	private String persistentFlags;
-	private Position position;
 	private String gridSizeEnum;
 	private List<CubeBlock> cubeBlocks;
 	private boolean powered;
@@ -44,14 +43,6 @@ public class CubeGrid {
 
 	public void setPersistentFlags(String persistentFlags) {
 		this.persistentFlags = persistentFlags;
-	}
-
-	public Position getPosition() {
-		return position;
-	}
-
-	public void setPosition(Position position) {
-		this.position = position;
 	}
 
 	public String getGridSizeEnum() {
@@ -91,13 +82,12 @@ public class CubeGrid {
 	}
 
 	public CubeGrid(String type, String entityId, String persistentFlags,
-			Position position, String gridSizeEnum, List<CubeBlock> cubeBlocks,
-			boolean powered, boolean beacon, Node node) {
+			String gridSizeEnum, List<CubeBlock> cubeBlocks, boolean powered,
+			boolean beacon, Node node) {
 		super();
 		this.type = type;
 		this.entityId = entityId;
 		this.persistentFlags = persistentFlags;
-		this.position = position;
 		this.gridSizeEnum = gridSizeEnum;
 		this.cubeBlocks = cubeBlocks;
 		this.powered = powered;

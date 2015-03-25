@@ -496,7 +496,7 @@ public class Main {
 		case "MyObjectBuilder_ShipWelder":
 		case "MyObjectBuilder_ShipGrinder":
 		case "MyObjectBuilder_MotorAdvancedStator":
-		case "MyObjectBuilder_MotorStator":
+		case "MyObjectBuilder_MotorAdvancedRotor":
 			element.getElementsByTagName("Enabled").item(0)
 					.setTextContent("false");
 			modified++;
