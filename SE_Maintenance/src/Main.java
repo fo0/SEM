@@ -240,6 +240,7 @@ public class Main {
 
 	public void startMaintanence(String path) {
 		Document doc = null;
+
 		if (cleanup) {
 			doc = analyseXML(readXML(path));
 		}
