@@ -12,7 +12,7 @@ java -jar Path\Maintenance.jar -h
 
 and so on
 
-
+====================================== EXAMPLE ====================================== 
 Using a Savegame Path and Delete all Grids without Power+Beacon AND deactivate all functional blocks which are not needed.
 
 Example (without backup):
