@@ -4,9 +4,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -111,9 +115,19 @@ public class Main {
 		if (cmd.hasOption("h")) {
 			lvFormater.printHelp("Help ", options);
 		}
+
 		String argSavePath = "";
 		if (cmd.hasOption("S")) {
 			argSavePath = cmd.getOptionValue("S");
+		}
+
+		boolean argBackup = false;
+		String argBackupPath = "";
+		if (cmd.hasOption("B")) {
+			argBackup = true;
+			if (cmd.hasOption("B")) {
+				argBackupPath = cmd.getOptionValue("B");
+			}
 		}
 
 		boolean argInfo = false;
@@ -160,11 +174,20 @@ public class Main {
 		} else {
 			path = argSavePath + "\\SANDBOX_0_0_0_.sbs";
 		}
+
 		info = argInfo; // Informations doing the Work
 
 		cleanup = argCleanup; // Activating Cleanup-Mode
 
 		disableBlocks = argDeAll;
+
+		/*
+		 * ===================================================
+		 * ================== Config Backup =================
+		 * ===================================================
+		 */
+		if (argBackup)
+			createBackup(argSavePath, argBackupPath);
 
 		/*
 		 * ===================================================
@@ -200,6 +223,21 @@ public class Main {
 			main.startMaintanence(path);
 	}
 
+	public static boolean createBackup(String source, String destination) {
+		DateTimeFormatter formatter = DateTimeFormatter
+				.ofPattern("yyyy-MM-dd_HH-mm");
+		try {
+			Zipping zip = new Zipping(source, destination + "\\Backup_"
+					+ LocalDateTime.now().format(formatter) + ".zip");
+			return true;
+		} catch (Exception e) {
+			// TODO: handle exception
+			log("BACKUP ERROR", 0, false);
+			return false;
+		}
+
+	}
+
 	public void startMaintanence(String path) {
 		Document doc = null;
 		if (cleanup) {
@@ -218,7 +256,7 @@ public class Main {
 		}
 	}
 
-	public void log(String text, int level, boolean append) {
+	public static void log(String text, int level, boolean append) {
 		boolean debug = true;
 		if (info) {
 			switch (level) {
