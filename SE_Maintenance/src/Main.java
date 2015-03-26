@@ -183,7 +183,7 @@ public class Main {
 
 		String path = "";
 		if (argSavePath.equals("")) {
-			path = "C:\\ProgramData\\SpaceEngineersDedicated\\Armageddon\\Saves\\Survival\\SANDBOX_0_0_0_.sbs";
+			path = "D:\\TestWorld\\SANDBOX_0_0_0_.sbs";
 		} else {
 			path = argSavePath + "\\SANDBOX_0_0_0_.sbs";
 		}
@@ -406,8 +406,7 @@ public class Main {
 										.getTextContent(), 0, false);
 						if (checkCubeGridForCleanup(e)) {
 							log("deleted", 1, false);
-							deleteElement(doc);
-							deleted++;
+							deleteElement(e);
 						}
 						break;
 
@@ -479,6 +478,8 @@ public class Main {
 
 						}
 					}
+				} else if (cleanup && !remove_noBeacon && !remove_unPowered) {
+					delete = false;
 				}
 
 				if (deactivateIdleMovementTurret) {
@@ -538,12 +539,10 @@ public class Main {
 	}
 
 	public boolean deactivateIdleMovementOnTurrets(Element element) {
-
 		switch (element.getAttribute("xsi:type")) {
 		case "MyObjectBuilder_LargeGatlingTurret":
 		case "MyObjectBuilder_LargeMissileTurret":
 		case "MyObjectBuilder_LargeInteriorTurret":
-
 			element.getElementsByTagName("EnableIdleRotation").item(0)
 					.setTextContent("false");
 			modified++;
