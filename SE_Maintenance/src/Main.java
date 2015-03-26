@@ -52,6 +52,7 @@ public class Main {
 	 */
 
 	public static List<String> entityRemove = null;
+	private static boolean deactivateIdleMovementTurret;
 
 	int asteroids = 0;
 	int floatingObjects = 0;
@@ -109,6 +110,13 @@ public class Main {
 				.isRequired(false).withValueSeparator('=').hasArg(false)
 				.create("da"));
 
+		options.addOption(OptionBuilder
+				.withLongOpt("disableIdleMovementTurrets")
+				.withDescription(
+						"Deactivating the Idle-Movement on all turrets - for fixing bugs,lags")
+				.isRequired(false).withValueSeparator('=').hasArg(false)
+				.create("dim"));
+
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd = parser.parse(options, args);
 
@@ -133,6 +141,11 @@ public class Main {
 		boolean argInfo = false;
 		if (cmd.hasOption("v")) {
 			argInfo = true;
+		}
+
+		boolean argDim = false;
+		if (cmd.hasOption("dim")) {
+			argDim = true;
 		}
 
 		boolean argCleanup = false;
@@ -210,6 +223,7 @@ public class Main {
 		boolean sensor = false;
 		boolean projector = false;
 		boolean timerblock = false;
+		deactivateIdleMovementTurret = argDim;
 
 		//
 		// ################## Code #####################
@@ -467,6 +481,10 @@ public class Main {
 					}
 				}
 
+				if (deactivateIdleMovementTurret) {
+					deactivateIdleMovementOnTurrets(ee);
+				}
+
 				if (disableBlocks) {
 					disableBlocks(ee);
 				}
@@ -514,6 +532,23 @@ public class Main {
 					.getNodeValue(), "Uranium")) {
 				return true;
 			}
+		}
+
+		return false;
+	}
+
+	public boolean deactivateIdleMovementOnTurrets(Element element) {
+
+		switch (element.getAttribute("xsi:type")) {
+		case "MyObjectBuilder_LargeGatlingTurret":
+		case "MyObjectBuilder_LargeMissileTurret":
+		case "MyObjectBuilder_LargeInteriorTurret":
+
+			element.getElementsByTagName("EnableIdleRotation").item(0)
+					.setTextContent("false");
+			modified++;
+			return true;
+
 		}
 
 		return false;
