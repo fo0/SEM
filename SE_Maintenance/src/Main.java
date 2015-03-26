@@ -183,7 +183,7 @@ public class Main {
 
 		String path = "";
 		if (argSavePath.equals("")) {
-			path = "D:\\TestWorld\\SANDBOX_0_0_0_.sbs";
+			path = "D:\\Survival\\SANDBOX_0_0_0_.sbs";
 		} else {
 			path = argSavePath + "\\SANDBOX_0_0_0_.sbs";
 		}
@@ -569,7 +569,7 @@ public class Main {
 		case "MyObjectBuilder_ShipWelder":
 		case "MyObjectBuilder_ShipGrinder":
 		case "MyObjectBuilder_MotorAdvancedStator":
-		case "MyObjectBuilder_MotorAdvancedRotor":
+//		case "MyObjectBuilder_MotorAdvancedRotor":
 			element.getElementsByTagName("Enabled").item(0)
 					.setTextContent("false");
 			modified++;
