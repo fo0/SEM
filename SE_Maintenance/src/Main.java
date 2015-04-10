@@ -6,11 +6,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,7 +31,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 public class Main {
 
@@ -51,7 +51,8 @@ public class Main {
 	 * 
 	 */
 
-	public static List<String> entityRemove = null;
+	public static List<String> entityRemove = new ArrayList<String>();
+	public static HashSet<String> entityExtendedBase = new HashSet<String>();
 	private static boolean deactivateIdleMovementTurret;
 
 	int asteroids = 0;
@@ -179,13 +180,11 @@ public class Main {
 		 * ===================================================
 		 */
 
-		entityRemove = new ArrayList<String>();
-
 		String path = "";
 		if (argSavePath.equals("")) {
-			path = "D:\\Survival\\SANDBOX_0_0_0_.sbs";
+			path = "D:/Survival/SANDBOX_0_0_0_.sbs";
 		} else {
-			path = argSavePath + "\\SANDBOX_0_0_0_.sbs";
+			path = argSavePath + "/SANDBOX_0_0_0_.sbs";
 		}
 
 		info = argInfo; // Informations doing the Work
@@ -434,6 +433,7 @@ public class Main {
 		boolean delete = true;
 		boolean powered = false;
 		boolean beaconed = false;
+		boolean isPistonOrRotor = false;
 
 		NodeList nestedNode = element
 				.getElementsByTagName("MyObjectBuilder_CubeBlock");
@@ -486,13 +486,60 @@ public class Main {
 					deactivateIdleMovementOnTurrets(ee);
 				}
 
+				checkForPistonAndRotor(ee);
+
+				if (entityExtendedBase.contains(validateForKnownPistons(ee)) && delete == true) {
+					isPistonOrRotor = true;
+				}
+
 				if (disableBlocks) {
 					disableBlocks(ee);
 				}
 			}
+		}
+
+		if (!delete) {
+			return false;
+		} else if (delete) {
+			if (isPistonOrRotor) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public String validateForKnownPistons(Element element) {
+		switch (element.getAttributeNode("xsi:type").getNodeValue()) {
+		case "MyObjectBuilder_PistonTop":
+		case "MyObjectBuilder_MotorRotor":
+		case "MyObjectBuilder_MotorAdvancedRotor":
+			return element.getElementsByTagName("EntityId").item(0)
+					.getTextContent();
+		}
+
+		return "";
+	}
+
+	public boolean checkForPistonAndRotor(Element element) {
+		switch (element.getAttributeNode("xsi:type").getNodeValue()) {
+		case "MyObjectBuilder_ExtendedPistonBase":
+			entityExtendedBase.add(element.getElementsByTagName("TopBlockId")
+					.item(0).getTextContent());
+			return true;
+		case "MyObjectBuilder_MotorStator":
+		case "MyObjectBuilder_MotorAdvancedStator":
+			System.out.println("Adding Rotor with: "
+					+ element.getElementsByTagName("RotorEntityId").item(0)
+							.getTextContent());
+			entityExtendedBase.add(element
+					.getElementsByTagName("RotorEntityId").item(0)
+					.getTextContent());
+			return true;
 
 		}
-		return delete;
+
+		return false;
 	}
 
 	public boolean checkInventoryFor(Element element, String block, String item) {
@@ -569,7 +616,7 @@ public class Main {
 		case "MyObjectBuilder_ShipWelder":
 		case "MyObjectBuilder_ShipGrinder":
 		case "MyObjectBuilder_MotorAdvancedStator":
-//		case "MyObjectBuilder_MotorAdvancedRotor":
+			// case "MyObjectBuilder_MotorAdvancedRotor":
 			element.getElementsByTagName("Enabled").item(0)
 					.setTextContent("false");
 			modified++;
@@ -635,9 +682,12 @@ public class Main {
 
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
 					.newInstance();
+			dbFactory.setIgnoringElementContentWhitespace(true);
+			dbFactory.setValidating(false);
 			DocumentBuilder dBuilder;
 
 			dBuilder = dbFactory.newDocumentBuilder();
+			
 			FileInputStream in = new FileInputStream(fXmlFile);
 			Document doc = dBuilder.parse(in, "UTF-8");
 
