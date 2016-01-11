@@ -7,8 +7,20 @@ Current usage:
 Start the application with:
 java -jar Path\Maintenance.jar -h
 
--h  help
--v verbose
+ -B,--backupPath <arg>               Path to Backup
+ -c,--cleanup                        Cleanup active, needed for all
+                                     cleanups
+ -cb,--cleanupBeacon                 Cleanup noBeacon
+ -cf,--cleanupFloatingObjects        Cleanup noPowered
+ -cp,--cleanupNoPower                Cleanup noPowered
+ -da,--deactivateAllFunctional       Deactivating all functional
+ -dim,--disableIdleMovementTurrets   Deactivating the Idle-Movement on all
+                                     turrets - for fixing bugs,lags
+ -dpo,--disableProjectorsOnly        Deactivating Projectors for fixing
+                                     bugs,lags
+ -h,--help                           Show Help
+ -S,--savePath <PathToFile>          Path to Savegame
+ -v,--verbose                        Activate verbose
 
 and so on
 
