@@ -310,35 +310,6 @@ public class Main {
 		}
 	}
 
-	public void info(List<CubeGrid> list) {
-		for (CubeGrid foo : list) {
-
-			switch (foo.getType()) {
-			case "MyObjectBuilder_FloatingObject":
-				floatingObjects++;
-				break;
-			case "MyObjectBuilder_VoxelMap":
-				asteroids++;
-				break;
-			case "MyObjectBuilder_CubeGrid":
-				if (!foo.isPowered()) {
-					unpowered++;
-				}
-				grids++;
-				break;
-
-			}
-		}
-
-		System.out.println("### Infos ###");
-		System.out.println("	Info:");
-		System.out.println("		Grids: " + this.grids);
-		System.out.println("			unpowered: " + this.unpowered);
-		System.out.println("		Asteroids: " + this.asteroids);
-		System.out.println("		Floating: " + this.floatingObjects);
-
-	}
-
 	private Transformer createXmlTransformer() throws Exception {
 		Transformer transformer = TransformerFactory.newInstance().newTransformer();
 		// transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
@@ -388,7 +359,13 @@ public class Main {
 
 					switch (e.getAttribute("xsi:type")) {
 					case "MyObjectBuilder_FloatingObject":
-						// do s.th. with FO
+						if (remove_floatingObjects)
+							deleteElement(e);
+						break;
+
+					case "MyObjectBuilder_ReplicableEntity":
+						if (remove_floatingObjects)
+							deleteElement(e);
 						break;
 
 					case "MyObjectBuilder_CubeGrid":
