@@ -37,19 +37,22 @@ import org.xml.sax.SAXParseException;
 
 public class Main {
 
-	private static boolean info;
-	private static boolean remove_floatingObjects;
-	private static boolean remove_unPowered;
-	private static boolean remove_noBeacon;
-	private static boolean remove_noOwnerShip;
-	private static boolean disableBlocks;
-	private static boolean cleanup;
 	/**
 	 * Space Engineers - Maintenance
 	 * 
 	 * Parameter: <SavePath> <BackupPath> <Params[]> Params[]: -
 	 * 
 	 */
+
+	private static boolean info;
+	private static boolean remove_floatingObjects;
+	private static boolean remove_unPowered;
+	private static boolean remove_noBeacon;
+	private static boolean remove_noOwnerShip;
+	private static boolean remove_noProjector;
+
+	private static boolean disableBlocks;
+	private static boolean cleanup;
 
 	public static List<String> entityRemove = new ArrayList<String>();
 	public static HashSet<String> entityExtendedBase = new HashSet<String>();
@@ -70,53 +73,45 @@ public class Main {
 	int assembler = 0;
 	int projector = 0;
 
-	public static void main(String[] args)
-			throws org.apache.commons.cli.ParseException {
+	public static void main(String[] args) throws org.apache.commons.cli.ParseException {
 		HelpFormatter lvFormater = new HelpFormatter();
 		Options options = new Options();
 		options.addOption("h", "help", false, "Show Help");
 
-		options.addOption(OptionBuilder.withLongOpt("savePath")
-				.withDescription("Path to Savegame").withArgName("PathToFile")
-				.isRequired(false).withValueSeparator('=').hasArg(true)
-				.create("S"));
+		options.addOption(OptionBuilder.withLongOpt("savePath").withDescription("Path to Savegame")
+				.withArgName("PathToFile").isRequired(false).withValueSeparator('=').hasArg(true).create("S"));
 
-		options.addOption(OptionBuilder.withLongOpt("backupPath")
-				.withDescription("Path to Backup").isRequired(false)
+		options.addOption(OptionBuilder.withLongOpt("backupPath").withDescription("Path to Backup").isRequired(false)
 				.withValueSeparator('=').hasArg(true).create("B"));
 
-		options.addOption(OptionBuilder.withLongOpt("verbose")
-				.withDescription("Activate verbose").isRequired(false)
+		options.addOption(OptionBuilder.withLongOpt("verbose").withDescription("Activate verbose").isRequired(false)
 				.withValueSeparator('=').hasArg(false).create("v"));
 
-		options.addOption(OptionBuilder.withLongOpt("cleanup")
-				.withDescription("Cleanup active, needed for all cleanups")
-				.isRequired(false).withValueSeparator('=').hasArg(false)
-				.create("c"));
+		options.addOption(
+				OptionBuilder.withLongOpt("cleanup").withDescription("Cleanup active, needed for all cleanups")
+						.isRequired(false).withValueSeparator('=').hasArg(false).create("c"));
 
-		options.addOption(OptionBuilder.withLongOpt("cleanupBeacon")
-				.withDescription("Cleanup noBeacon").isRequired(false)
-				.withValueSeparator('=').hasArg(false).create("cb"));
+		options.addOption(OptionBuilder.withLongOpt("cleanupBeacon").withDescription("Cleanup noBeacon")
+				.isRequired(false).withValueSeparator('=').hasArg(false).create("cb"));
 
-		options.addOption(OptionBuilder.withLongOpt("cleanupNoPower")
-				.withDescription("Cleanup noPowered").isRequired(false)
-				.withValueSeparator('=').hasArg(false).create("cp"));
+		options.addOption(OptionBuilder.withLongOpt("cleanupNoPower").withDescription("Cleanup noPowered")
+				.isRequired(false).withValueSeparator('=').hasArg(false).create("cp"));
 
-		options.addOption(OptionBuilder.withLongOpt("cleanupFloatingObjects")
-				.withDescription("Cleanup noPowered").isRequired(false)
-				.withValueSeparator('=').hasArg(false).create("cf"));
+		options.addOption(
+				OptionBuilder.withLongOpt("cleanupFloatingObjects").withDescription("Cleanup Floating Objects")
+						.isRequired(false).withValueSeparator('=').hasArg(false).create("cf"));
 
-		options.addOption(OptionBuilder.withLongOpt("deactivateAllFunctional")
-				.withDescription("Deactivating all functional")
-				.isRequired(false).withValueSeparator('=').hasArg(false)
-				.create("da"));
+		options.addOption(
+				OptionBuilder.withLongOpt("deactivateAllFunctional").withDescription("Deactivating all functional")
+						.isRequired(false).withValueSeparator('=').hasArg(false).create("da"));
 
-		options.addOption(OptionBuilder
-				.withLongOpt("disableIdleMovementTurrets")
-				.withDescription(
-						"Deactivating the Idle-Movement on all turrets - for fixing bugs,lags")
-				.isRequired(false).withValueSeparator('=').hasArg(false)
-				.create("dim"));
+		options.addOption(OptionBuilder.withLongOpt("disableIdleMovementTurrets")
+				.withDescription("Deactivating the Idle-Movement on all turrets - for fixing bugs,lags")
+				.isRequired(false).withValueSeparator('=').hasArg(false).create("dim"));
+
+		options.addOption(OptionBuilder.withLongOpt("disableProjectorsOnly")
+				.withDescription("Deactivating Projectors for fixing bugs,lags").isRequired(false)
+				.withValueSeparator('=').hasArg(false).create("dpo"));
 
 		CommandLineParser parser = new BasicParser();
 		CommandLine cmd = parser.parse(options, args);
@@ -142,6 +137,11 @@ public class Main {
 		boolean argInfo = false;
 		if (cmd.hasOption("v")) {
 			argInfo = true;
+		}
+
+		boolean argProjector = false;
+		if (cmd.hasOption("dpo")) {
+			argProjector = true;
 		}
 
 		boolean argDim = false;
@@ -211,6 +211,7 @@ public class Main {
 		remove_unPowered = argNoPower; // removing grids without power
 		remove_noBeacon = argBeacon; // removing grids without beacon
 		remove_noOwnerShip = true;
+		remove_noProjector = argProjector;
 
 		/*
 		 * ===================================================
@@ -237,11 +238,10 @@ public class Main {
 	}
 
 	public static boolean createBackup(String source, String destination) {
-		DateTimeFormatter formatter = DateTimeFormatter
-				.ofPattern("yyyy-MM-dd_HH-mm");
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm");
 		try {
-			Zipping zip = new Zipping(source, destination + "\\Backup_"
-					+ LocalDateTime.now().format(formatter) + ".zip");
+			Zipping zip = new Zipping(source,
+					destination + "\\Backup_" + LocalDateTime.now().format(formatter) + ".zip");
 			return true;
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -321,9 +321,6 @@ public class Main {
 				asteroids++;
 				break;
 			case "MyObjectBuilder_CubeGrid":
-				// System.out.print("Grid: " + foo.getType() + " ("
-				// + foo.getEntityId() + ")");
-				// System.out.println("	Blocks: " + foo.getCubeBlocks().size());
 				if (!foo.isPowered()) {
 					unpowered++;
 				}
@@ -343,8 +340,7 @@ public class Main {
 	}
 
 	private Transformer createXmlTransformer() throws Exception {
-		Transformer transformer = TransformerFactory.newInstance()
-				.newTransformer();
+		Transformer transformer = TransformerFactory.newInstance().newTransformer();
 		// transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
 		// "yes");
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -358,8 +354,7 @@ public class Main {
 		try {
 
 			OutputStream os = new FileOutputStream(new File(savePath));
-			OutputStreamWriter bufferedWriter = new OutputStreamWriter(os,
-					"UTF8");
+			OutputStreamWriter bufferedWriter = new OutputStreamWriter(os, "UTF8");
 
 			Transformer transformer = createXmlTransformer();
 			// StreamResult result = new StreamResult(new PrintWriter(
@@ -383,8 +378,7 @@ public class Main {
 
 	private Document analyseXML(Document doc) {
 		try {
-			NodeList nList = doc
-					.getElementsByTagName("MyObjectBuilder_EntityBase");
+			NodeList nList = doc.getElementsByTagName("MyObjectBuilder_EntityBase");
 
 			for (int i = 0; i < nList.getLength(); i++) {
 				Node nNode = nList.item(i);
@@ -400,9 +394,7 @@ public class Main {
 					case "MyObjectBuilder_CubeGrid":
 						// do s.th. with CG
 						grids++;
-						log("Grid-Id: "
-								+ e.getElementsByTagName("EntityId").item(0)
-										.getTextContent(), 0, false);
+						log("Grid-Id: " + e.getElementsByTagName("EntityId").item(0).getTextContent(), 0, false);
 						if (checkCubeGridForCleanup(e)) {
 							log("deleted", 1, false);
 							deleteElement(e);
@@ -435,17 +427,13 @@ public class Main {
 		boolean beaconed = false;
 		boolean isPistonOrRotor = false;
 
-		NodeList nestedNode = element
-				.getElementsByTagName("MyObjectBuilder_CubeBlock");
+		NodeList nestedNode = element.getElementsByTagName("MyObjectBuilder_CubeBlock");
 		for (int j = 0; j < nestedNode.getLength(); j++) {
 			Node n = nestedNode.item(j);
 			Element ee = (Element) n;
 			if (ee.getNodeName() != null) {
-				log("Type: " + ee.getAttributeNode("xsi:type").getNodeValue(),
-						2, true);
-				log("SubtypeName: "
-						+ ee.getElementsByTagName("SubtypeName").item(0)
-								.getTextContent(), 2, false);
+				log("Type: " + ee.getAttributeNode("xsi:type").getNodeValue(), 2, true);
+				log("SubtypeName: " + ee.getElementsByTagName("SubtypeName").item(0).getTextContent(), 2, false);
 
 				if (cleanup && remove_unPowered && !remove_noBeacon) {
 					if (!powered) {
@@ -480,20 +468,29 @@ public class Main {
 					}
 				} else if (cleanup && !remove_noBeacon && !remove_unPowered) {
 					delete = false;
+				} else if (cleanup && remove_noProjector) {
+					delete = false;
 				}
 
 				if (deactivateIdleMovementTurret) {
 					deactivateIdleMovementOnTurrets(ee);
 				}
 
+				// looking for base piston or rotor
+				// and adding it to validation list
 				checkForPistonAndRotor(ee);
 
 				if (entityExtendedBase.contains(validateForKnownPistons(ee)) && delete == true) {
 					isPistonOrRotor = true;
 				}
 
-				if (disableBlocks) {
-					disableBlocks(ee);
+				if (disableBlocks | remove_noProjector) {
+					if (disableBlocks && !remove_noProjector) {
+						disableBlocks(ee);
+					} else if (!disableBlocks && remove_noProjector) {
+						if (ee.getAttribute("xsi:type").equals("MyObjectBuilder_Projector"))
+							disableBlocks(ee);
+					}
 				}
 			}
 		}
@@ -514,8 +511,7 @@ public class Main {
 		case "MyObjectBuilder_PistonTop":
 		case "MyObjectBuilder_MotorRotor":
 		case "MyObjectBuilder_MotorAdvancedRotor":
-			return element.getElementsByTagName("EntityId").item(0)
-					.getTextContent();
+			return element.getElementsByTagName("EntityId").item(0).getTextContent();
 		}
 
 		return "";
@@ -524,17 +520,11 @@ public class Main {
 	public boolean checkForPistonAndRotor(Element element) {
 		switch (element.getAttributeNode("xsi:type").getNodeValue()) {
 		case "MyObjectBuilder_ExtendedPistonBase":
-			entityExtendedBase.add(element.getElementsByTagName("TopBlockId")
-					.item(0).getTextContent());
+			entityExtendedBase.add(element.getElementsByTagName("TopBlockId").item(0).getTextContent());
 			return true;
 		case "MyObjectBuilder_MotorStator":
 		case "MyObjectBuilder_MotorAdvancedStator":
-			System.out.println("Adding Rotor with: "
-					+ element.getElementsByTagName("RotorEntityId").item(0)
-							.getTextContent());
-			entityExtendedBase.add(element
-					.getElementsByTagName("RotorEntityId").item(0)
-					.getTextContent());
+			entityExtendedBase.add(element.getElementsByTagName("RotorEntityId").item(0).getTextContent());
 			return true;
 
 		}
@@ -556,8 +546,7 @@ public class Main {
 					Element itemsee = (Element) itemsn;
 					// System.out.println("items = true");
 					if (itemsee.hasChildNodes()) {
-						if (itemsee.getElementsByTagName("SubtypeName").item(0)
-								.getTextContent().equals(item)) {
+						if (itemsee.getElementsByTagName("SubtypeName").item(0).getTextContent().equals(item)) {
 							return true;
 						}
 					}
@@ -576,8 +565,7 @@ public class Main {
 			return true;
 
 		case "MyObjectBuilder_Reactor":
-			if (checkInventoryFor(element, element.getAttributeNode("xsi:type")
-					.getNodeValue(), "Uranium")) {
+			if (checkInventoryFor(element, element.getAttributeNode("xsi:type").getNodeValue(), "Uranium")) {
 				return true;
 			}
 		}
@@ -590,8 +578,7 @@ public class Main {
 		case "MyObjectBuilder_LargeGatlingTurret":
 		case "MyObjectBuilder_LargeMissileTurret":
 		case "MyObjectBuilder_LargeInteriorTurret":
-			element.getElementsByTagName("EnableIdleRotation").item(0)
-					.setTextContent("false");
+			element.getElementsByTagName("EnableIdleRotation").item(0).setTextContent("false");
 			modified++;
 			return true;
 
@@ -617,25 +604,9 @@ public class Main {
 		case "MyObjectBuilder_ShipGrinder":
 		case "MyObjectBuilder_MotorAdvancedStator":
 			// case "MyObjectBuilder_MotorAdvancedRotor":
-			element.getElementsByTagName("Enabled").item(0)
-					.setTextContent("false");
+			element.getElementsByTagName("Enabled").item(0).setTextContent("false");
 			modified++;
 			return true;
-			// Test Disable FTL
-			// case "MyObjectBuilder_Gyro":
-			// if (element.getElementsByTagName("SubtypeName").item(0)
-			// .getTextContent().equals("LargeFTL")
-			// || element.getElementsByTagName("SubtypeName").item(0)
-			// .getTextContent().equals("SmallFTL")) {
-			// System.out.println("######## Found FTL ########");
-			// element.getElementsByTagName("Enabled").item(0)
-			// .setTextContent("false");
-			// element.getElementsByTagName("GyroOverride").item(0)
-			// .setTextContent("false");
-			// element.getElementsByTagName("ColorMaskHSV").item(0)
-			// .getAttributes();
-			// }
-			// break;
 		}
 
 		return false;
@@ -666,8 +637,7 @@ public class Main {
 
 		for (int i = 0; i < nodes.getLength(); i++) {
 			Element parent = (Element) nodes.item(i);
-			Element entity = (Element) parent.getElementsByTagName("EntityId")
-					.item(0);
+			Element entity = (Element) parent.getElementsByTagName("EntityId").item(0);
 			if (entityRemove.contains(entity.getTextContent())) {
 				parent.getParentNode().removeChild(parent);
 				this.deleted++;
@@ -680,14 +650,13 @@ public class Main {
 		try {
 			File fXmlFile = new File(path);
 
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
-					.newInstance();
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			dbFactory.setIgnoringElementContentWhitespace(true);
 			dbFactory.setValidating(false);
 			DocumentBuilder dBuilder;
 
 			dBuilder = dbFactory.newDocumentBuilder();
-			
+
 			FileInputStream in = new FileInputStream(fXmlFile);
 			Document doc = dBuilder.parse(in, "UTF-8");
 
